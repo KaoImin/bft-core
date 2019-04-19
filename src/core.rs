@@ -30,6 +30,11 @@ impl Core {
         )
     }
 
+    ///
+    pub fn to_bft_core(&self, msg: BftMsg) -> Result<()> {
+        self.sender.send(msg).map_err(|_| BftError::SendMsgErr)
+    }
+
     /// A function to send proposal to Bft.
     pub fn send_proposal(&self, proposal: BftMsg) -> Result<()> {
         match proposal {
