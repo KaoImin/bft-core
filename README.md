@@ -80,7 +80,7 @@ enum BftMsg {
 }
 ```
 
-For detailed introduction, click [here](src/lib.rs).
+For detailed introduction, click [here](src/types.rs).
 
 ## Usage
 
@@ -88,7 +88,7 @@ First, add bft-rs and crossbeam to your `Cargo.toml`:
 
 ```rust
 [dependencies]
-bft-rs = { git = "https://github.com/cryptape/bft-rs.git", branch = "develop" }
+bft-rs = { git = "https://github.com/KaoImin/bft-core.git", branch = "develop" }
 ```
 
 If you want to use `async_verify` feature, needs to add following codes:
@@ -117,12 +117,12 @@ let actuator = BFT::new(address);
 What needs to illustrate is that the BFT machine is in stop step by default, therefore, the first thing is send `BftMsg::Start` message. Use `send_start()` function to send a message to BFT state machine. LikeWise use `send_proposal()`, `send_vote()`, `send_feed()`, `send_status()`, `send_pause()` functions to send `Proposal`, `Vote`, `Feed`, `Status`, `Pause` messages to the BFT actuator, these functions will return a `Result`. take `Status` for example:
 
 ```rust
-actuator.send_start(BftMsg::Start).expect("");
+actuator.send_start(BftMsg::Start).map_err();
 
-actuator.send_status(BftMsg::Status(status)).expect("");
+actuator.send_status(BftMsg::Status(status)).map_err();
 
 // only in feature async_verify
-actuator.send_verify(BftMsg::VerifyResq(result)).expect("");
+actuator.send_verify(BftMsg::VerifyResq(result)).map_err();
 ```
 
 And use `recv()` function and `match` to receive messages from BFT state machine as following:
@@ -146,4 +146,4 @@ let height: u64 = actuator.get_height();
 
 ## License
 
-This an open source project under the [MIT License](https://github.com/cryptape/bft-rs/blob/master/LICENSE).
+This an open source project under the [MIT License](https://github.com/KaoImin/bft-core/blob/develop/LICENSE).

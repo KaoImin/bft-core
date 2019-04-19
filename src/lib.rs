@@ -1,4 +1,4 @@
-//! An efficent and stable Rust library of BFT protocol for distributed system.
+//! An efficient and stable Rust library of BFT protocol for distributed system.
 //! 
 //!
 
