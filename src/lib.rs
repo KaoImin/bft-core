@@ -1,5 +1,5 @@
 //! An efficient and stable Rust library of BFT protocol for distributed system.
-//! 
+//!
 //!
 
 #![deny(missing_docs)]
@@ -19,5 +19,5 @@ pub mod types;
 /// BFT vote set.
 pub(crate) mod voteset;
 
-
 pub use crate::core::Core;
+pub use crossbeam::crossbeam_channel;

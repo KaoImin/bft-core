@@ -51,7 +51,7 @@ pub struct Proposal {
     /// A lock round of the proposal.
     pub lock_round: Option<u64>,
     /// The lock votes of the proposal.
-    pub lock_votes: Option<Vec<Vote>>,
+    pub lock_votes: Vec<Vote>,
     /// The address of proposer.
     pub proposer: Address,
 }

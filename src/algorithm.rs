@@ -99,51 +99,45 @@ impl Bft {
         let (timer2bft, bft4timer) = unbounded();
 
         // start timer module.
-        let _timer_thread = thread::Builder::new()
-            .name("bft_timer".to_string())
-            .spawn(move || {
-                let timer = WaitTimer::new(timer2bft, timer4bft);
-                timer.start();
-            })
-            .unwrap();
+        thread::spawn(move || {
+            let timer = WaitTimer::new(timer2bft, timer4bft);
+            timer.start();
+        });
 
         // start main loop module.
         let mut engine = Bft::initialize(s, r, bft2timer, bft4timer, local_address);
-        let _main_thread = thread::Builder::new()
-            .name("main_loop".to_string())
-            .spawn(move || {
-                let mut process_flag = false;
-                loop {
-                    let mut get_timer_msg = Err(RecvError);
-                    let mut get_msg = Err(RecvError);
+        thread::spawn(move || {
+            let mut process_flag = false;
+            loop {
+                let mut get_timer_msg = Err(RecvError);
+                let mut get_msg = Err(RecvError);
 
-                    select! {
-                        recv(engine.timer_notity) -> msg => get_timer_msg = msg,
-                        recv(engine.msg_receiver) -> msg => get_msg = msg,
+                select! {
+                    recv(engine.timer_notity) -> msg => get_timer_msg = msg,
+                    recv(engine.msg_receiver) -> msg => get_msg = msg,
+                }
+
+                if process_flag {
+                    if let Ok(ok_timer) = get_timer_msg {
+                        engine.timeout_process(&ok_timer);
                     }
 
-                    if process_flag {
-                        if let Ok(ok_timer) = get_timer_msg {
-                            engine.timeout_process(&ok_timer);
+                    if let Ok(ok_msg) = get_msg {
+                        if ok_msg == BftMsg::Pause {
+                            info!("BFT pause");
+                            process_flag = false;
+                        } else {
+                            engine.process(ok_msg);
                         }
-
-                        if let Ok(ok_msg) = get_msg {
-                            if ok_msg == BftMsg::Pause {
-                                info!("BFT pause");
-                                process_flag = false;
-                            } else {
-                                engine.process(ok_msg);
-                            }
-                        }
-                    } else if let Ok(ok_msg) = get_msg {
-                        if ok_msg == BftMsg::Start {
-                            info!("BFT go on running");
-                            process_flag = true;
-                        }
+                    }
+                } else if let Ok(ok_msg) = get_msg {
+                    if ok_msg == BftMsg::Start {
+                        info!("BFT go on running");
+                        process_flag = true;
                     }
                 }
-            })
-            .unwrap();
+            }
+        });
     }
 
     #[cfg(not(feature = "async_verify"))]
@@ -307,42 +301,38 @@ impl Bft {
         }));
     }
 
-    fn determine_height_filter(&self, sender: Address) -> (bool, bool) {
-        let mut add_flag = false;
-        let mut trans_flag = false;
-
+    fn determine_height_filter(&mut self, sender: Address) -> bool {
         if let Some(ins) = self.height_filter.get(&sender) {
             // had received retransmit message from the address
             if (Instant::now() - *ins)
                 > self.params.timer.get_prevote() * TIMEOUT_LOW_HEIGHT_MESSAGE_COEF
             {
-                trans_flag = true;
+                return true;
             }
         } else {
             // never recvive retransmit message from the address
-            add_flag = true;
-            trans_flag = true;
+            self.height_filter
+                .entry(sender)
+                .or_insert_with(Instant::now);
+            return true;
         }
-        (add_flag, trans_flag)
+        false
     }
 
-    fn determine_round_filter(&self, sender: Address) -> (bool, bool) {
-        let mut add_flag = false;
-        let mut trans_flag = false;
-
+    fn determine_round_filter(&mut self, sender: Address) -> bool {
         if let Some(ins) = self.round_filter.get(&sender) {
             // had received retransmit message from the address
             if (Instant::now() - *ins)
                 > self.params.timer.get_prevote() * TIMEOUT_LOW_ROUND_MESSAGE_COEF
             {
-                trans_flag = true;
+                return true;
             }
         } else {
             // never recvive retransmit message from the address
-            add_flag = true;
-            trans_flag = true;
+            self.round_filter.entry(sender).or_insert_with(Instant::now);
+            return true;
         }
-        (add_flag, trans_flag)
+        false
     }
 
     fn is_proposer(&self) -> bool {
@@ -409,7 +399,7 @@ impl Bft {
                 round: self.round,
                 content: self.lock_status.clone().unwrap().proposal,
                 lock_round: Some(self.lock_status.clone().unwrap().round),
-                lock_votes: Some(self.lock_status.clone().unwrap().votes),
+                lock_votes: self.lock_status.clone().unwrap().votes,
                 proposer: self.params.address.clone(),
             })
         } else {
@@ -427,7 +417,7 @@ impl Bft {
                 round: self.round,
                 content: self.proposal.clone().unwrap(),
                 lock_round: None,
-                lock_votes: None,
+                lock_votes: Vec::new(),
                 proposer: self.params.address.clone(),
             })
         };
@@ -488,9 +478,9 @@ impl Bft {
             self.lock_status = Some(LockStatus {
                 proposal: proposal.content,
                 round: proposal.lock_round.unwrap(),
-                votes: proposal.lock_votes.unwrap(),
+                votes: proposal.lock_votes,
             });
-        } else if proposal.lock_votes.is_none()
+        } else if proposal.lock_votes.is_empty()
             && self.lock_status.is_none()
             && proposal.round == self.round
         {
@@ -548,28 +538,14 @@ impl Bft {
         if vote.height == self.height - 1 {
             if self.last_commit_round.is_some() && vote.round >= self.last_commit_round.unwrap() {
                 // deal with height fall behind one, round ge last commit round
-                let sender = vote.voter.clone();
-                let (add_flag, trans_flag) = self.determine_height_filter(sender.clone());
-
-                if add_flag {
-                    self.height_filter
-                        .entry(sender)
-                        .or_insert_with(Instant::now);
-                }
-                if trans_flag {
+                if self.determine_height_filter(vote.voter.clone()) {
                     self.retransmit_vote(vote.round);
                 }
             }
             return false;
         } else if vote.height == self.height && self.round != 0 && vote.round == self.round - 1 {
             // deal with equal height, round fall behind
-            let sender = vote.voter.clone();
-            let (add_flag, trans_flag) = self.determine_round_filter(sender.clone());
-
-            if add_flag {
-                self.round_filter.entry(sender).or_insert_with(Instant::now);
-            }
-            if trans_flag {
+            if self.determine_round_filter(vote.voter.clone()) {
                 info!("Some nodes fall behind, send nil vote to help them pursue");
                 self.send_bft_msg(BftMsg::Vote(Vote {
                     vote_type: VoteType::Precommit,
@@ -663,7 +639,6 @@ impl Bft {
                 if *self.verify_result.get(&prop).unwrap() {
                     return VerifyResult::Approved;
                 } else {
-                    let prop = self.lock_status.clone().unwrap().proposal;
                     if let Some(feed) = self.feed.clone() {
                         // if feed eq proposal, clean it
                         if prop == feed.proposal {

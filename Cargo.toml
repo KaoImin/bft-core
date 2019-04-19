@@ -4,10 +4,13 @@ version = "0.1.0"
 authors = ["Eason Gao <kaoimin@qq.com>"]
 edition = "2018"
 license = "MIT"
+include = ["Cargo.toml", "src/*", "README.md", "LICENSE"]
 readme = "README.md"
+keywords = ["consensus", "bft", "distributed-systems"]
+categories = ["Algorithms", "Database interfaces"]
 repository = "https://github.com/KaoImin/bft-core"
 description = """
-An efficient and stable Rust library of BFT protocol for distributed system.
+An efficient and stable Rust library of BFT core for distributed system.
 """
 
 [dependencies]

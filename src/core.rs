@@ -154,7 +154,7 @@ mod test {
                 round: 0,
                 content: vec![],
                 lock_round: None,
-                lock_votes: None,
+                lock_votes: vec![],
                 proposer: vec![1],
             }),
             BftMsg::Vote(Vote {
