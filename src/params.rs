@@ -1,4 +1,4 @@
-use crate::{Address, Target};
+use crate::types::{Address, Target};
 
 use std::cell::Cell;
 use std::time::Duration;

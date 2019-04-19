@@ -1,4 +1,4 @@
-use crate::{Address, Target, Vote, VoteType};
+use crate::types::{Address, Target, Vote, VoteType};
 
 use std::collections::HashMap;
 

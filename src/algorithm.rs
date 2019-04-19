@@ -1,15 +1,17 @@
-use crate::*;
 use crate::{
     params::BftParams,
     timer::{TimeoutInfo, WaitTimer},
+    types::*,
     voteset::{VoteCollector, VoteSet},
 };
+
+use crossbeam::crossbeam_channel::{select, unbounded, Receiver, RecvError, Sender};
+use log::{debug, error, info, trace, warn};
+use serde_derive::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 use std::thread;
 use std::time::{Duration, Instant};
-
-use crossbeam::crossbeam_channel::{unbounded, Receiver, RecvError, Sender};
 
 pub(crate) const INIT_HEIGHT: u64 = 0;
 const INIT_ROUND: u64 = 0;
@@ -22,10 +24,10 @@ const TIMEOUT_RETRANSE_COEF: u32 = 15;
 const TIMEOUT_LOW_HEIGHT_MESSAGE_COEF: u32 = 300;
 const TIMEOUT_LOW_ROUND_MESSAGE_COEF: u32 = 300;
 
-#[cfg(feature = "verify_req")]
+#[cfg(feature = "async_verify")]
 const VERIFY_AWAIT_COEF: u32 = 50;
 
-#[cfg(feature = "verify_req")]
+#[cfg(feature = "async_verify")]
 #[derive(Clone, Eq, PartialEq)]
 enum VerifyResult {
     Approved,
@@ -45,7 +47,7 @@ pub(crate) enum Step {
     /// A step to wait for more prevote if none of them reach 2/3.
     PrevoteWait,
     /// A step to wait for proposal verify result.
-    #[cfg(feature = "verify_req")]
+    #[cfg(feature = "async_verify")]
     VerifyWait,
     /// A step to transmit precommit and check precommit count.
     Precommit,
@@ -85,7 +87,7 @@ pub(crate) struct Bft {
     htime: Instant,
     params: BftParams,
 
-    #[cfg(feature = "verify_req")]
+    #[cfg(feature = "async_verify")]
     verify_result: HashMap<Target, bool>,
 }
 
@@ -144,7 +146,7 @@ impl Bft {
             .unwrap();
     }
 
-    #[cfg(not(feature = "verify_req"))]
+    #[cfg(not(feature = "async_verify"))]
     fn initialize(
         s: Sender<BftMsg>,
         r: Receiver<BftMsg>,
@@ -176,7 +178,7 @@ impl Bft {
         }
     }
 
-    #[cfg(feature = "verify_req")]
+    #[cfg(feature = "async_verify")]
     fn initialize(
         s: Sender<BftMsg>,
         r: Receiver<BftMsg>,
@@ -272,7 +274,7 @@ impl Bft {
         self.votes.clear_prevote_count();
         self.authority_list = Vec::new();
 
-        #[cfg(feature = "verify_req")]
+        #[cfg(feature = "async_verify")]
         self.verify_result.clear();
     }
 
@@ -653,7 +655,7 @@ impl Bft {
         false
     }
 
-    #[cfg(feature = "verify_req")]
+    #[cfg(feature = "async_verify")]
     fn check_verify(&mut self) -> VerifyResult {
         if let Some(lock) = self.lock_status.clone() {
             let prop = lock.proposal;
@@ -835,7 +837,7 @@ impl Bft {
         }
     }
 
-    #[cfg(feature = "verify_req")]
+    #[cfg(feature = "async_verify")]
     fn save_verify_resp(&mut self, verify_result: VerifyResp) {
         if self.verify_result.contains_key(&verify_result.proposal) {
             if &verify_result.is_pass != self.verify_result.get(&verify_result.proposal).unwrap() {
@@ -939,7 +941,7 @@ impl Bft {
                 }
             }
 
-            #[cfg(feature = "verify_req")]
+            #[cfg(feature = "async_verify")]
             BftMsg::VerifyResp(verify_resp) => {
                 self.save_verify_resp(verify_resp);
                 if self.step == Step::VerifyWait {
@@ -1005,7 +1007,7 @@ impl Bft {
                 }
                 // next do precommit
                 self.change_to_step(Step::Precommit);
-                #[cfg(feature = "verify_req")]
+                #[cfg(feature = "async_verify")]
                 {
                     let verify_result = self.check_verify();
                     if verify_result == VerifyResult::Undetermined {
@@ -1046,7 +1048,7 @@ impl Bft {
                 self.new_round_start();
             }
 
-            #[cfg(feature = "verify_req")]
+            #[cfg(feature = "async_verify")]
             Step::VerifyWait => {
                 // clean fsave info
                 self.clean_polc();

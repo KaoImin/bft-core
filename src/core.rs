@@ -1,7 +1,7 @@
-use crate::*;
 use crate::{
     algorithm::{Bft, INIT_HEIGHT},
     error::BftError,
+    types::*,
 };
 
 use crossbeam::crossbeam_channel::{unbounded, Receiver, Sender};
@@ -89,7 +89,7 @@ impl Core {
     }
 
     /// A function to send verify result to Bft.
-    #[cfg(feature = "verify_req")]
+    #[cfg(feature = "async_verify")]
     pub fn send_verify(&self, verify_result: BftMsg) -> Result<()> {
         match verify_result {
             BftMsg::VerifyResp(r) => Ok(r),
@@ -137,7 +137,7 @@ impl Core {
 #[cfg(test)]
 mod test {
     use super::Core as Bft;
-    use crate::{error::BftError, *};
+    use crate::{error::BftError, types::*};
 
     fn create_status(height: u64) -> BftMsg {
         BftMsg::Status(Status {
@@ -187,11 +187,11 @@ mod test {
 
     #[test]
     fn test_send_proposal() {
-        let (Core, _) = Bft::start(vec![1]);
+        let (bft, _) = Bft::start(vec![1]);
         let msg = generate_msg();
 
         for msg_index in 0..6 {
-            let res = Core.send_proposal(msg.get(msg_index).unwrap().to_owned());
+            let res = bft.send_proposal(msg.get(msg_index).unwrap().to_owned());
             if msg_index == 0 {
                 assert_eq!(Ok(()), res);
             } else {
@@ -202,11 +202,11 @@ mod test {
 
     #[test]
     fn test_send_vote() {
-        let (Core, _) = Bft::start(vec![1]);
+        let (bft, _) = Bft::start(vec![1]);
         let msg = generate_msg();
 
         for msg_index in 0..6 {
-            let res = Core.send_vote(msg.get(msg_index).unwrap().to_owned());
+            let res = bft.send_vote(msg.get(msg_index).unwrap().to_owned());
             if msg_index == 1 {
                 assert_eq!(Ok(()), res);
             } else {
@@ -217,11 +217,11 @@ mod test {
 
     #[test]
     fn test_send_feed() {
-        let (Core, _) = Bft::start(vec![1]);
+        let (bft, _) = Bft::start(vec![1]);
         let msg = generate_msg();
 
         for msg_index in 0..6 {
-            let res = Core.send_feed(msg.get(msg_index).unwrap().to_owned());
+            let res = bft.send_feed(msg.get(msg_index).unwrap().to_owned());
             if msg_index == 2 {
                 assert_eq!(Ok(()), res);
             } else {
@@ -232,11 +232,11 @@ mod test {
 
     #[test]
     fn test_send_status() {
-        let (mut Core, _) = Bft::start(vec![1]);
+        let (mut bft, _) = Bft::start(vec![1]);
         let msg = generate_msg();
 
         for msg_index in 0..3 {
-            let res = Core.send_status(msg.get(msg_index).unwrap().to_owned());
+            let res = bft.send_status(msg.get(msg_index).unwrap().to_owned());
             if msg_index == 4 {
                 assert_eq!(Ok(()), res);
             } else {
@@ -247,11 +247,11 @@ mod test {
 
     #[test]
     fn test_send_pause() {
-        let (Core, _) = Bft::start(vec![1]);
+        let (bft, _) = Bft::start(vec![1]);
         let msg = generate_msg();
 
         for msg_index in 0..6 {
-            let res = Core.send_pause(msg.get(msg_index).unwrap().to_owned());
+            let res = bft.send_pause(msg.get(msg_index).unwrap().to_owned());
             if msg_index == 5 {
                 assert_eq!(Ok(()), res);
             } else {
@@ -262,11 +262,11 @@ mod test {
 
     #[test]
     fn test_send_start() {
-        let (Core, _) = Bft::start(vec![1]);
+        let (bft, _) = Bft::start(vec![1]);
         let msg = generate_msg();
 
         for msg_index in 0..6 {
-            let res = Core.send_start(msg.get(msg_index).unwrap().to_owned());
+            let res = bft.send_start(msg.get(msg_index).unwrap().to_owned());
             if msg_index == 6 {
                 assert_eq!(Ok(()), res);
             } else {
@@ -278,12 +278,12 @@ mod test {
     #[test]
     fn test_height_change() {
         let height: Vec<(u64, u64)> = vec![(1, 2), (2, 3), (1, 3), (4, 5), (6, 7), (5, 7)];
-        let (mut Core, _) = Bft::start(vec![1]);
-        assert_eq!(Core.get_height(), 0);
+        let (mut bft, _) = Bft::start(vec![1]);
+        assert_eq!(bft.get_height(), 0);
 
         for h in height.into_iter() {
-            if let Ok(_) = Core.send_status(create_status(h.0)) {
-                assert_eq!(Core.get_height(), h.1);
+            if let Ok(_) = bft.send_status(create_status(h.0)) {
+                assert_eq!(bft.get_height(), h.1);
             } else {
                 panic!("Send Error!");
             }
