@@ -1,5 +1,5 @@
 [package]
-name = "bft-rs"
+name = "bft-core"
 version = "0.1.0"
 authors = ["Eason Gao <kaoimin@qq.com>"]
 edition = "2018"
@@ -11,7 +11,6 @@ An efficient and stable Rust library of BFT protocol for distributed system.
 """
 
 [dependencies]
-bincode = "0.8.0"
 crossbeam = "0.7"
 lru-cache = "0.1"
 log = "0.4.3"
