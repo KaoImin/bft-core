@@ -10,6 +10,7 @@ use crossbeam::crossbeam_channel::{unbounded, Receiver, Sender};
 pub type Result<T> = ::std::result::Result<T, BftError>;
 
 /// A Bft Core
+#[derive(Clone, Debug)]
 pub struct Core {
     sender: Sender<BftMsg>,
     height: u64,
