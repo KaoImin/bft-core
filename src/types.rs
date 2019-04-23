@@ -26,7 +26,7 @@ pub enum BftMsg {
     /// Start running BFT state machine.
     Start,
     ///
-    GetBlockRequest,
+    GetProposalRequest(u64),
 }
 
 /// Bft vote types.
