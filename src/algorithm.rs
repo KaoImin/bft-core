@@ -841,6 +841,7 @@ impl Bft {
                 self.transmit_prevote();
                 self.change_to_step(Step::Prevote);
             } else {
+                self.send_bft_msg(BftMsg::GetBlockRequest);
                 self.change_to_step(Step::ProposeWait);
             }
         } else {
