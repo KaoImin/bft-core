@@ -14,7 +14,7 @@ An efficient and stable Rust library of BFT core for distributed system.
 """
 
 [dependencies]
-crossbeam = "0.7"
+crossbeam-channel = "0.3"
 lru-cache = "0.1"
 log = "0.4.3"
 min-max-heap = "1.2.0"

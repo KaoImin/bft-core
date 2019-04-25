@@ -5,7 +5,7 @@ use crate::{
     voteset::{VoteCollector, VoteSet},
 };
 
-use crossbeam::crossbeam_channel::{select, unbounded, Receiver, RecvError, Sender};
+use crossbeam_channel::{select, unbounded, Receiver, RecvError, Sender};
 use log::{debug, error, info, trace, warn};
 use serde_derive::{Deserialize, Serialize};
 

@@ -20,4 +20,4 @@ pub mod types;
 pub(crate) mod voteset;
 
 pub use crate::core::Core;
-pub use crossbeam::crossbeam_channel;
+pub use crossbeam_channel;

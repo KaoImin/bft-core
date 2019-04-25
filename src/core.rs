@@ -4,7 +4,7 @@ use crate::{
     types::*,
 };
 
-use crossbeam::crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 
 /// Results of Bft Core.
 pub type Result<T> = ::std::result::Result<T, BftError>;
