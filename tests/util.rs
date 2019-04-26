@@ -4,9 +4,9 @@ use crossbeam_channel::{Receiver, Sender};
 
 #[derive(Clone, Debug)]
 pub(crate) struct TestSupport {
-    send: Sender<bft::BftMsg>,
-    recv: Receiver<bft::BftMsg>,
-    recv_commit: Receiver<bft::Commit>,
+    pub(crate) send: Sender<bft::BftMsg>,
+    pub(crate) recv: Receiver<bft::BftMsg>,
+    pub(crate) recv_commit: Receiver<bft::Commit>,
 }
 
 impl Support for TestSupport {
@@ -108,20 +108,6 @@ impl Support for TestSupport {
 
     fn cal_proposer(&self, height: u64, round: u64) -> usize {
         (height as usize + round as usize) % 4
-    }
-}
-
-impl TestSupport {
-    pub(crate) fn new(
-        send: Sender<bft::BftMsg>,
-        recv: Receiver<bft::BftMsg>,
-        recv_commit: Receiver<bft::Commit>,
-    ) -> Self {
-        TestSupport {
-            send,
-            recv,
-            recv_commit,
-        }
     }
 }
 

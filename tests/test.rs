@@ -71,6 +71,20 @@ fn generate_authority() -> Vec<Vec<u8>> {
     vec![vec![0], vec![1], vec![2], vec![3]]
 }
 
+impl TestSupport {
+    pub(crate) fn new(
+        send: Sender<BftMsg>,
+        recv: Receiver<BftMsg>,
+        recv_commit: Receiver<Commit>,
+    ) -> Self {
+        TestSupport {
+            send,
+            recv,
+            recv_commit,
+        }
+    }
+}
+
 #[test]
 fn test() {
     let mut builder = Builder::from_default_env();
@@ -79,6 +93,7 @@ fn test() {
     let (s, r, r_commit) = BftTest::start();
     let ts = TestSupport::new(s, r, r_commit);
     let mut test = Actuator::new(ts, 0, 0, generate_authority(), "tests/output/test.db");
+    // let case = bft_test::test_case::one_offline_cases();
+    // let _ = test.proc_test(case).map_err(|err| panic!("bft error {:?}", err));
     let _ = test.all_test().map_err(|err| panic!("bft error {:?}", err));
-    ::std::process::exit(0);
 }
