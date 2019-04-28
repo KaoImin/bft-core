@@ -840,6 +840,9 @@ impl Bft {
             if self.try_transmit_proposal() {
                 self.transmit_prevote();
                 self.change_to_step(Step::Prevote);
+                if self.check_prevote_count() {
+                    self.change_to_step(Step::PrevoteWait);
+                }
             } else {
                 self.send_bft_msg(BftMsg::GetProposalRequest(self.height));
                 self.change_to_step(Step::ProposeWait);
