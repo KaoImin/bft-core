@@ -6,7 +6,7 @@ use crate::{
 
 use crossbeam_channel::{unbounded, Receiver, Sender};
 
-/// Results of Bft Core.
+/// Result of Bft Core.
 pub type Result<T> = ::std::result::Result<T, BftError>;
 
 /// A Bft Core
@@ -17,7 +17,7 @@ pub struct Core {
 }
 
 impl Core {
-    /// A function to create a new Bft Core.
+    /// A function to start a new Bft Core.
     pub fn start(address: Address) -> (Self, Receiver<BftMsg>) {
         let (sender, internal_receiver) = unbounded();
         let (internal_sender, receiver) = unbounded();
@@ -31,7 +31,7 @@ impl Core {
         )
     }
 
-    ///
+    /// A function to send BFT message to BFT core.
     pub fn to_bft_core(&self, msg: BftMsg) -> Result<()> {
         self.sender.send(msg).map_err(|_| BftError::SendMsgErr)
     }

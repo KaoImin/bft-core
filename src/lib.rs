@@ -19,5 +19,7 @@ pub mod types;
 /// BFT vote set.
 pub(crate) mod voteset;
 
+/// Re-pub BFT core.
 pub use crate::core::Core;
+/// Re-pub coressbeam_channel.
 pub use crossbeam_channel;

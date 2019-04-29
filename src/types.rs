@@ -5,7 +5,7 @@ pub type Address = Vec<u8>;
 /// Type for proposal.
 pub type Target = Vec<u8>;
 
-/// BFT input message.
+/// BFT message type.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum BftMsg {
     /// Proposal message.
@@ -38,21 +38,20 @@ pub enum VoteType {
     Precommit,
 }
 
-/// Something need to be consensus in a round.
-/// A `Proposal` includes `height`, `round`, `content`, `lock_round`, `lock_votes`
-/// and `proposer`. `lock_round` and `lock_votes` are `Option`, means the PoLC of
-/// the proposal. Therefore, these must have same variant of `Option`.
+/// A proposal
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Proposal {
-    /// The height of proposal.
+    /// The height of a proposal.
     pub height: u64,
-    /// The round of proposal.
+    /// The round of a proposal.
     pub round: u64,
     /// The proposal content.
     pub content: Target,
-    /// A lock round of the proposal.
+    /// A lock round of the proposal. If the proposal has not been locked,
+    /// it should be `None`.
     pub lock_round: Option<u64>,
-    /// The lock votes of the proposal.
+    /// The lock votes of the proposal. If the proposal has not been locked,
+    /// it should be an empty `Vec`.
     pub lock_votes: Vec<Vote>,
     /// The address of proposer.
     pub proposer: Address,
@@ -61,9 +60,9 @@ pub struct Proposal {
 /// A PoLC.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LockStatus {
-    /// The lock proposal
+    /// The lock proposal.
     pub proposal: Target,
-    /// The lock round
+    /// The lock round.
     pub round: u64,
     /// The lock votes.
     pub votes: Vec<Vote>,
@@ -74,35 +73,35 @@ pub struct LockStatus {
 pub struct Vote {
     /// Prevote vote or precommit vote
     pub vote_type: VoteType,
-    /// The height of vote
+    /// The height of a vote.
     pub height: u64,
-    /// The round of vote
+    /// The round of a vote.
     pub round: u64,
-    /// The vote proposal
+    /// The vote proposal.
     pub proposal: Target,
-    /// The address of voter
+    /// The address of voter.
     pub voter: Address,
 }
 
-/// A proposal for a height.
+/// A proposal content for a height.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Feed {
     /// The height of the proposal.
     pub height: u64,
-    /// A proposal.
+    /// A proposal content.
     pub proposal: Target,
 }
 
-/// A result of a height.
+/// A commit of a height.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Commit {
     /// The height of result.
     pub height: u64,
     /// The round of result.
     pub round: u64,
-    /// Consensus result
+    /// Consensus result.
     pub proposal: Target,
-    /// Votes for generate proof.
+    /// Precommit votes for generate proof.
     pub lock_votes: Vec<Vote>,
     /// The node address.
     pub address: Address,
