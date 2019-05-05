@@ -53,7 +53,6 @@
 //!
 //! // receive message
 //! r.recv().unwrap();
-//!
 //! ```
 //!
 

@@ -25,8 +25,6 @@ pub enum CoreInput {
     Pause,
     /// Start running BFT state machine.
     Start,
-    ///
-    GetProposalRequest(u64),
 }
 
 /// BFT output message type.
@@ -38,8 +36,7 @@ pub enum CoreOutput {
     Vote(Vote),
     /// Feed messge, this is the proposal of the height.
     Commit(Commit),
-    /// Pause BFT state machine.
-    ///
+    /// Request a feed of a height.
     GetProposalRequest(u64),
 }
 
@@ -73,13 +70,13 @@ pub struct Proposal {
 
 /// A PoLC.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct LockStatus {
+pub(crate) struct LockStatus {
     /// The lock proposal.
-    pub proposal: Target,
+    pub(crate) proposal: Target,
     /// The lock round.
-    pub round: u64,
+    pub(crate) round: u64,
     /// The lock votes.
-    pub votes: Vec<Vote>,
+    pub(crate) votes: Vec<Vote>,
 }
 
 /// A vote to a proposal.
@@ -121,7 +118,7 @@ pub struct Commit {
     pub address: Address,
 }
 
-/// Necessary messages for a height.
+/// The rich status of a height.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct Status {
     /// The height of rich status.
