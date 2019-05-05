@@ -89,44 +89,6 @@ mod test {
         })
     }
 
-    fn generate_msg() -> Vec<BftMsg> {
-        vec![
-            BftMsg::Proposal(Proposal {
-                height: 0,
-                round: 0,
-                content: vec![],
-                lock_round: None,
-                lock_votes: vec![],
-                proposer: vec![1],
-            }),
-            BftMsg::Vote(Vote {
-                vote_type: VoteType::Precommit,
-                height: 0,
-                round: 0,
-                proposal: vec![],
-                voter: vec![1],
-            }),
-            BftMsg::Feed(Feed {
-                height: 0,
-                proposal: vec![],
-            }),
-            BftMsg::Commit(Commit {
-                height: 0,
-                round: 0,
-                proposal: vec![],
-                lock_votes: vec![],
-                address: vec![1],
-            }),
-            BftMsg::Status(Status {
-                height: 0,
-                interval: None,
-                authority_list: vec![],
-            }),
-            BftMsg::Pause,
-            BftMsg::Start,
-        ]
-    }
-
     #[test]
     fn test_height_change() {
         let height: Vec<(u64, u64)> = vec![(1, 2), (2, 3), (1, 3), (4, 5), (6, 7), (5, 7)];
