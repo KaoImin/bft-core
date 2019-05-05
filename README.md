@@ -56,27 +56,34 @@ A complete BFT model consists of 4 essential parts:
 
 4. Wal Module, the place saving BFT logs.
 
-**NOTICE**: The bft-rs only provides a basic BFT state machine and does not support the advanced functions such as signature verification, proof generation, compact block, etc. These functions are in consensus module rather than bft-rs library.
+**NOTICE**: The bft-core only provides a basic BFT state machine and does not support the advanced functions such as signature verification, proof generation, compact block, etc. These functions are in consensus module rather than bft-core library.
 
 ## Feature
-The bft-rs provides `async_verify` feature to verify transcation after received a proposal. BFT state machine will check the verify result of the proposal before `Precommit` step. If it has not received the result of the proposal yet, it will wait for an extra 1/2 of the consensus duration.
+
+The bft-core provides `async_verify` feature to verify transcation after received a proposal. BFT state machine will check the verify result of the proposal before `Precommit` step. If it has not received the result of the proposal yet, it will wait for an extra 1/2 of the consensus duration.
 
 ## Interface
 
-If bft-rs works correctly, it needs to receive 4 types of message: `Proposal`, `Vote`, `Feed`, `Status`. And  bft-rs can send 3 types of message: `Proposal`, `Vote`, `Commit`. Besides, bft-rs also provides `Stop` and `Start` message that can control state machine stop or go on. These types of messages consist of the `enum BftMsg`:
+If bft-core works correctly, it needs to receive 4 types of message: `Proposal`, `Vote`, `Feed`, `Status`. And  bft-core can send 4 types of message: `Proposal`, `Vote`, `Commit` and `GetProposalRequest`. Besides, bft-core also provides `Stop` and `Start` message that can control state machine stop or go on. These types of messages consist in the enum `CoreInput` and `CoreOutput`:
 
 ```rust
-enum BftMsg {
+enum CoreInput {
     Proposal(Proposal),
     Vote(Vote),
     Feed(Feed),
     Status(Status),
     Commit(Commit),
-
     #[cfg(feature = "async_verify")]
     VerifyResp(VerifyResp),
     Pause,
     Start,
+}
+
+enum CoreOutput {
+    Proposal(Proposal),
+    Vote(Vote),
+    Commit(Commit),
+    GetProposalRequest(u64),
 }
 ```
 
@@ -84,64 +91,53 @@ For detailed introduction, click [here](src/types.rs).
 
 ## Usage
 
-First, add bft-rs and crossbeam to your `Cargo.toml`:
+First, add bft-core to your `Cargo.toml`:
 
 ```rust
 [dependencies]
-bft-rs = { git = "https://github.com/KaoImin/bft-core.git", branch = "develop" }
+bft-core = { git = "https://github.com/KaoImin/bft-core.git", branch = "develop" }
 ```
 
 If you want to use `async_verify` feature, needs to add following codes:
 
 ```rust
 [features]
-async_verify = ["bft-rs/async_verify"]
+async_verify = ["bft-core/async_verify"]
 ```
 
 Second, add BFT and channel to your crate as following:
 
 ```rust
-extern crate bft_rs as bft;
+extern crate bft_core as bft;
 
-use bft::{actuator::BftActuator as BFT, *};
+use bft::{types::*, Core, FromCore};
 ```
 
-Third, initialize a BFT actuator:
+Third, initialize a BFT core:
 
 ```rust
-let actuator = BFT::new(address);
+let bft = BFT::new(address);
 ```
 
 *The `address` here is the address of this node with type `Vec<u8>`.*
 
-What needs to illustrate is that the BFT machine is in stop step by default, therefore, the first thing is send `BftMsg::Start` message. Use `send_start()` function to send a message to BFT state machine. LikeWise use `send_proposal()`, `send_vote()`, `send_feed()`, `send_status()`, `send_pause()` functions to send `Proposal`, `Vote`, `Feed`, `Status`, `Pause` messages to the BFT actuator, these functions will return a `Result`. take `Status` for example:
+What needs to illustrate is that the BFT machine is in stop step by default, therefore, the first thing is send `CoreInput::Start` message. Use `send_bft_msg()` function to send a message to BFT state machine as following:
 
 ```rust
-actuator.send_start(BftMsg::Start).map_err();
+bft.send_bft_msg(CoreInput::Start).map_err();
 
-actuator.send_status(BftMsg::Status(status)).map_err();
+bft.send_bft_msg(CoreInput::Status(status)).map_err();
 
 // only in feature async_verify
-actuator.send_verify(BftMsg::VerifyResq(result)).map_err();
+bft.send_bft_msg(CoreInput::VerifyResq(result)).map_err();
 ```
 
-And use `recv()` function and `match` to receive messages from BFT state machine as following:
-
-```rust
-if let Ok(msg) = actuator.recv() {
-      match msg {
-            BftMsg::Proposal(proposal) => {}
-            BftMsg::Vote(vote) => {}
-            BftMsg::Commit(commit) => {}
-            _ => {}
-      }
-}
-```
+And implement the trait `FromCore` to receive messages from BFT core.
 
 If you want to use the BFT height to do some verify, use `get_height` function as following:
 
 ```rust
-let height: u64 = actuator.get_height();
+let height: u64 = bft.get_height();
 ```
 
 ## License
