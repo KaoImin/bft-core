@@ -1,0 +1,5 @@
+# ignore all files in tests/output/
+tests/output/*
+
+# except for .gitkeep
+!.gitkeep

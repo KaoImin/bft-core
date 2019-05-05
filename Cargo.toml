@@ -1,0 +1,31 @@
+[package]
+name = "bft-core"
+version = "0.1.0"
+authors = ["Eason Gao <kaoimin@qq.com>"]
+edition = "2018"
+license = "MIT"
+include = ["Cargo.toml", "src/*", "README.md", "LICENSE"]
+readme = "README.md"
+keywords = ["consensus", "bft", "distributed-systems"]
+categories = ["Algorithms", "Database interfaces"]
+repository = "https://github.com/KaoImin/bft-core"
+description = """
+An efficient and stable Rust library of BFT core for distributed system.
+"""
+
+[dependencies]
+crossbeam-channel = "0.3"
+lru-cache = "0.1"
+log = "0.4.3"
+min-max-heap = "1.2.0"
+serde = "1.0"
+serde_derive = "1.0"
+
+[dev-dependencies]
+bft-test = { git = "https://github.com/cryptape/bft-test.git", branch = "develop"}
+env_logger = "0.6.0"
+rand = "0.5.5"
+
+[features]
+default = []
+async_verify = []
