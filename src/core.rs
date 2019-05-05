@@ -29,7 +29,7 @@ impl Core {
     }
 
     /// A function to send BFT message to BFT core.
-    pub fn to_bft_core(&mut self, msg: BftMsg) -> Result<()> {
+    pub fn send_bft_msg(&mut self, msg: BftMsg) -> Result<()> {
         match msg {
             BftMsg::Status(s) => {
                 let status_height = s.height;
@@ -134,7 +134,7 @@ mod test {
         assert_eq!(bft.get_height(), 0);
 
         for h in height.into_iter() {
-            if let Ok(_) = bft.to_bft_core(create_status(h.0)) {
+            if let Ok(_) = bft.send_bft_msg(create_status(h.0)) {
                 assert_eq!(bft.get_height(), h.1);
             } else {
                 panic!("Send Error!");

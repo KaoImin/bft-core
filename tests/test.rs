@@ -43,7 +43,7 @@ impl BftTest {
         let (test2core, core4test) = unbounded();
         let (s_commit, r_commit) = unbounded();
         let (mut engine, recv4core) = BftTest::init(s_commit, core4test);
-        engine.bft.to_bft_core(BftMsg::Start).unwrap();
+        engine.bft.send_bft_msg(BftMsg::Start).unwrap();
 
         thread::spawn(move || loop {
             engine.process();
@@ -83,7 +83,7 @@ impl BftTest {
             recv(self.recv4test) -> msg => {
                 if let Ok(bft_msg) = msg {
                     println!("Send {:?} to BFT core",bft_msg.clone());
-                    self.bft.to_bft_core(bft_msg).unwrap();
+                    self.bft.send_bft_msg(bft_msg).unwrap();
                 }
             }
         }

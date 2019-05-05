@@ -12,10 +12,10 @@
 //! let (bft, recv) = Core::start(address);
 //!
 //! // send message
-//! bft.to_bft_core(BftMsg::Start).unwrap();
-//! bft.to_bft_core(BftMsg::Status(s)).unwrap();
-//! bft.to_bft_core(BftMsg::Proposal(p)).unwrap();
-//! bft.to_bft_core(BftMsg::Pause).unwrap();
+//! bft.send_bft_msg(BftMsg::Start).unwrap();
+//! bft.send_bft_msg(BftMsg::Status(s)).unwrap();
+//! bft.send_bft_msg(BftMsg::Proposal(p)).unwrap();
+//! bft.send_bft_msg(BftMsg::Pause).unwrap();
 //!
 //! // receive message
 //! let recv_msg = recv.recv().unwrap();
