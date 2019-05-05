@@ -178,7 +178,7 @@ where
 
     #[cfg(feature = "async_verify")]
     fn initialize(
-        s: Sender<BftMsg>,
+        s: T,
         r: Receiver<BftMsg>,
         ts: Sender<TimeoutInfo>,
         tn: Receiver<TimeoutInfo>,

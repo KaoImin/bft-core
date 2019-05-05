@@ -18,13 +18,13 @@
 //! # struct SendMsg(Sender<BftMsg>);
 //! # impl FromCore for SendMsg {
 //! #     type error = Error;
-//! # 
+//! #
 //! #     fn send_msg(&self, msg: BftMsg) -> Result<(), Error> {
 //! #         self.0.send(msg).map_err(|_| Error::SendErr)?;
 //! #         Ok(())
 //! #     }
 //! # }
-//! # 
+//! #
 //! # impl SendMsg {
 //! #     fn new(s: Sender<BftMsg>) -> Self {
 //! #         SendMsg(s)
@@ -36,12 +36,12 @@
 //! #   interval: None,
 //! #   authority_list: vec![vec![0]],
 //! # };
-//! # 
+//! #
 //! # let feed = Feed {
 //! #   height: 1,
 //! #   proposal: vec![6, 5, 5, 3, 5],
 //! # };
-//! 
+//!
 //! let (s, r) = unbounded();
 //! let mut bft = Core::new(SendMsg::new(s), vec![0]);
 //!
