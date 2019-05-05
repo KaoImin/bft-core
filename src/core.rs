@@ -13,7 +13,7 @@ pub type Result<T> = ::std::result::Result<T, BftError>;
 /// A Bft Core
 #[derive(Clone, Debug)]
 pub struct Core {
-    sender: Sender<BftMsg>,
+    sender: Sender<CoreInput>,
     height: u64,
 }
 
@@ -29,11 +29,11 @@ impl Core {
     }
 
     /// A function to send BFT message to BFT core.
-    pub fn send_bft_msg(&mut self, msg: BftMsg) -> Result<()> {
+    pub fn send_bft_msg(&mut self, msg: CoreInput) -> Result<()> {
         match msg {
-            BftMsg::Status(s) => {
+            CoreInput::Status(s) => {
                 let status_height = s.height;
-                if self.sender.send(BftMsg::Status(s)).is_ok() {
+                if self.sender.send(CoreInput::Status(s)).is_ok() {
                     if self.height <= status_height {
                         self.height = status_height + 1;
                     }
@@ -63,12 +63,12 @@ mod test {
         SendErr,
     }
 
-    struct SendMsg(Sender<BftMsg>);
+    struct SendMsg(Sender<CoreOutput>);
 
     impl FromCore for SendMsg {
         type error = Error;
 
-        fn send_msg(&self, msg: BftMsg) -> Result<(), Error> {
+        fn send_msg(&self, msg: CoreOutput) -> Result<(), Error> {
             self.0.send(msg).map_err(|_| Error::SendErr)?;
             Ok(())
         }
@@ -81,8 +81,8 @@ mod test {
         }
     }
 
-    fn create_status(height: u64) -> BftMsg {
-        BftMsg::Status(Status {
+    fn create_status(height: u64) -> CoreInput {
+        CoreInput::Status(Status {
             height,
             interval: None,
             authority_list: vec![],

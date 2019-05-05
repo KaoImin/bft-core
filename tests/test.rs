@@ -13,37 +13,37 @@ enum Error {
     SendErr,
 }
 
-struct SendMsg(Sender<BftMsg>);
+struct SendMsg(Sender<CoreOutput>);
 
 impl FromCore for SendMsg {
     type error = Error;
 
-    fn send_msg(&self, msg: BftMsg) -> Result<(), Error> {
+    fn send_msg(&self, msg: CoreOutput) -> Result<(), Error> {
         self.0.send(msg).map_err(|_| Error::SendErr)?;
         Ok(())
     }
 }
 
 impl SendMsg {
-    fn new(s: Sender<BftMsg>) -> Self {
+    fn new(s: Sender<CoreOutput>) -> Self {
         SendMsg(s)
     }
 }
 
 struct BftTest {
-    recv4test: Receiver<BftMsg>,
-    recv4core: Receiver<BftMsg>,
-    send2test: Sender<BftMsg>,
+    recv4test: Receiver<CoreInput>,
+    recv4core: Receiver<CoreOutput>,
+    send2test: Sender<CoreOutput>,
     send_commit: Sender<Commit>,
     bft: Core,
 }
 
 impl BftTest {
-    fn start() -> (Sender<BftMsg>, Receiver<BftMsg>, Receiver<Commit>) {
+    fn start() -> (Sender<CoreInput>, Receiver<CoreOutput>, Receiver<Commit>) {
         let (test2core, core4test) = unbounded();
         let (s_commit, r_commit) = unbounded();
         let (mut engine, recv4core) = BftTest::init(s_commit, core4test);
-        engine.bft.send_bft_msg(BftMsg::Start).unwrap();
+        engine.bft.send_bft_msg(CoreInput::Start).unwrap();
 
         thread::spawn(move || loop {
             engine.process();
@@ -52,7 +52,10 @@ impl BftTest {
         (test2core, recv4core, r_commit)
     }
 
-    fn init(send_commit: Sender<Commit>, recv4test: Receiver<BftMsg>) -> (Self, Receiver<BftMsg>) {
+    fn init(
+        send_commit: Sender<Commit>,
+        recv4test: Receiver<CoreInput>,
+    ) -> (Self, Receiver<CoreOutput>) {
         let (send2test, recv) = unbounded();
         let (s, recv4core) = unbounded();
         let bft = Core::new(SendMsg::new(s), vec![0]);
@@ -74,8 +77,8 @@ impl BftTest {
                 if let Ok(test_msg) = msg {
                     println!("Send {:?} to Test", test_msg.clone());
                     match test_msg {
-                        BftMsg::Commit(c) => self.send_commit.send(c).unwrap(),
-                        BftMsg::GetProposalRequest(_h) => return,
+                        CoreOutput::Commit(c) => self.send_commit.send(c).unwrap(),
+                        CoreOutput::GetProposalRequest(_h) => return,
                         _ => self.send2test.send(test_msg.clone()).unwrap(),
                     }
                 }
@@ -96,8 +99,8 @@ fn generate_authority() -> Vec<Vec<u8>> {
 
 impl TestSupport {
     pub(crate) fn new(
-        send: Sender<BftMsg>,
-        recv: Receiver<BftMsg>,
+        send: Sender<CoreInput>,
+        recv: Receiver<CoreOutput>,
         recv_commit: Receiver<Commit>,
     ) -> Self {
         TestSupport {

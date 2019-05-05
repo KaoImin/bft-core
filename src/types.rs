@@ -5,9 +5,9 @@ pub type Address = Vec<u8>;
 /// Type for proposal.
 pub type Target = Vec<u8>;
 
-/// BFT message type.
+/// BFT input message type.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub enum BftMsg {
+pub enum CoreInput {
     /// Proposal message.
     Proposal(Proposal),
     /// Vote message.
@@ -25,6 +25,20 @@ pub enum BftMsg {
     Pause,
     /// Start running BFT state machine.
     Start,
+    ///
+    GetProposalRequest(u64),
+}
+
+/// BFT output message type.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub enum CoreOutput {
+    /// Proposal message.
+    Proposal(Proposal),
+    /// Vote message.
+    Vote(Vote),
+    /// Feed messge, this is the proposal of the height.
+    Commit(Commit),
+    /// Pause BFT state machine.
     ///
     GetProposalRequest(u64),
 }

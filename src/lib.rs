@@ -15,18 +15,18 @@
 //! #   SendErr,
 //! # }
 //! #
-//! # struct SendMsg(Sender<BftMsg>);
+//! # struct SendMsg(Sender<CoreOutput>);
 //! # impl FromCore for SendMsg {
 //! #     type error = Error;
 //! #
-//! #     fn send_msg(&self, msg: BftMsg) -> Result<(), Error> {
+//! #     fn send_msg(&self, msg: CoreOutput) -> Result<(), Error> {
 //! #         self.0.send(msg).map_err(|_| Error::SendErr)?;
 //! #         Ok(())
 //! #     }
 //! # }
 //! #
 //! # impl SendMsg {
-//! #     fn new(s: Sender<BftMsg>) -> Self {
+//! #     fn new(s: Sender<CoreOutput>) -> Self {
 //! #         SendMsg(s)
 //! #     }
 //! # }
@@ -41,15 +41,15 @@
 //! #   height: 1,
 //! #   proposal: vec![6, 5, 5, 3, 5],
 //! # };
-//!
+//! #
 //! let (s, r) = unbounded();
 //! let mut bft = Core::new(SendMsg::new(s), vec![0]);
 //!
 //! // send message
-//! bft.send_bft_msg(BftMsg::Start).unwrap();
-//! bft.send_bft_msg(BftMsg::Status(status)).unwrap();
-//! bft.send_bft_msg(BftMsg::Feed(feed)).unwrap();
-//! bft.send_bft_msg(BftMsg::Pause).unwrap();
+//! bft.send_bft_msg(CoreInput::Start).unwrap();
+//! bft.send_bft_msg(CoreInput::Status(status)).unwrap();
+//! bft.send_bft_msg(CoreInput::Feed(feed)).unwrap();
+//! bft.send_bft_msg(CoreInput::Pause).unwrap();
 //!
 //! // receive message
 //! r.recv().unwrap();
@@ -77,12 +77,12 @@ pub(crate) mod voteset;
 /// Re-pub BFT core.
 pub use crate::core::Core;
 
-use crate::types::BftMsg;
+use crate::types::CoreOutput;
 
 /// BFT core send message.
 pub trait FromCore {
     /// BFT core send message error.
     type error: ::std::fmt::Debug;
     /// Send a BFT message to outside.
-    fn send_msg(&self, msg: BftMsg) -> Result<(), Self::error>;
+    fn send_msg(&self, msg: CoreOutput) -> Result<(), Self::error>;
 }

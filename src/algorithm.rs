@@ -69,7 +69,7 @@ impl Default for Step {
 /// BFT state message.
 pub(crate) struct Bft<T> {
     msg_sender: T,
-    msg_receiver: Receiver<BftMsg>,
+    msg_receiver: Receiver<CoreInput>,
     timer_seter: Sender<TimeoutInfo>,
     timer_notity: Receiver<TimeoutInfo>,
 
@@ -97,7 +97,7 @@ where
     T: FromCore + Send + 'static,
 {
     /// A function to start a BFT state machine.
-    pub(crate) fn start(s: T, r: Receiver<BftMsg>, local_address: Address) {
+    pub(crate) fn start(s: T, r: Receiver<CoreInput>, local_address: Address) {
         // define message channel and timeout channel
         let (bft2timer, timer4bft) = unbounded();
         let (timer2bft, bft4timer) = unbounded();
@@ -127,7 +127,7 @@ where
                     }
 
                     if let Ok(ok_msg) = get_msg {
-                        if ok_msg == BftMsg::Pause {
+                        if ok_msg == CoreInput::Pause {
                             info!("BFT pause");
                             process_flag = false;
                         } else {
@@ -135,7 +135,7 @@ where
                         }
                     }
                 } else if let Ok(ok_msg) = get_msg {
-                    if ok_msg == BftMsg::Start {
+                    if ok_msg == CoreInput::Start {
                         info!("BFT go on running");
                         process_flag = true;
                     }
@@ -147,7 +147,7 @@ where
     #[cfg(not(feature = "async_verify"))]
     fn initialize(
         s: T,
-        r: Receiver<BftMsg>,
+        r: Receiver<CoreInput>,
         ts: Sender<TimeoutInfo>,
         tn: Receiver<TimeoutInfo>,
         local_address: Target,
@@ -179,7 +179,7 @@ where
     #[cfg(feature = "async_verify")]
     fn initialize(
         s: T,
-        r: Receiver<BftMsg>,
+        r: Receiver<CoreInput>,
         ts: Sender<TimeoutInfo>,
         tn: Receiver<TimeoutInfo>,
         local_address: Target,
@@ -223,7 +223,7 @@ where
     }
 
     #[inline]
-    fn send_bft_msg(&self, msg: BftMsg) {
+    fn send_bft_msg(&self, msg: CoreOutput) {
         self.msg_sender.send_msg(msg).unwrap();
     }
 
@@ -288,7 +288,7 @@ where
             self.last_commit_proposal.clone().unwrap()
         );
 
-        self.send_bft_msg(BftMsg::Vote(Vote {
+        self.send_bft_msg(CoreOutput::Vote(Vote {
             vote_type: VoteType::Prevote,
             height: self.height - 1,
             round,
@@ -296,7 +296,7 @@ where
             voter: self.params.clone().address,
         }));
 
-        self.send_bft_msg(BftMsg::Vote(Vote {
+        self.send_bft_msg(CoreOutput::Vote(Vote {
             vote_type: VoteType::Precommit,
             height: self.height - 1,
             round,
@@ -398,7 +398,7 @@ where
                 self.lock_status.clone().unwrap().proposal
             );
 
-            BftMsg::Proposal(Proposal {
+            CoreOutput::Proposal(Proposal {
                 height: self.height,
                 round: self.round,
                 content: self.lock_status.clone().unwrap().proposal,
@@ -416,7 +416,7 @@ where
                 self.proposal.clone().unwrap()
             );
 
-            BftMsg::Proposal(Proposal {
+            CoreOutput::Proposal(Proposal {
                 height: self.height,
                 round: self.round,
                 content: self.proposal.clone().unwrap(),
@@ -524,7 +524,7 @@ where
         };
 
         let _ = self.votes.add(vote.clone());
-        let msg = BftMsg::Vote(vote);
+        let msg = CoreOutput::Vote(vote);
         debug!("Prevote to {:?}", prevote);
         self.send_bft_msg(msg);
         self.set_timer(
@@ -551,7 +551,7 @@ where
             // deal with equal height, round fall behind
             if self.determine_round_filter(vote.voter.clone()) {
                 info!("Some nodes fall behind, send nil vote to help them pursue");
-                self.send_bft_msg(BftMsg::Vote(Vote {
+                self.send_bft_msg(CoreOutput::Vote(Vote {
                     vote_type: VoteType::Precommit,
                     height: vote.height,
                     round: vote.round,
@@ -685,7 +685,7 @@ where
         };
 
         let _ = self.votes.add(vote.clone());
-        let msg = BftMsg::Vote(vote);
+        let msg = CoreOutput::Vote(vote);
         debug!("Precommit to {:?}", precommit);
         self.send_bft_msg(msg);
         self.set_timer(
@@ -733,7 +733,7 @@ where
 
     fn proc_commit(&mut self) {
         let result = self.lock_status.clone().expect("No lock when commit!");
-        self.send_bft_msg(BftMsg::Commit(Commit {
+        self.send_bft_msg(CoreOutput::Commit(Commit {
             height: self.height,
             round: self.round,
             proposal: result.clone().proposal,
@@ -848,7 +848,7 @@ where
                     self.change_to_step(Step::PrevoteWait);
                 }
             } else {
-                self.send_bft_msg(BftMsg::GetProposalRequest(self.height));
+                self.send_bft_msg(CoreOutput::GetProposalRequest(self.height));
                 self.change_to_step(Step::ProposeWait);
             }
         } else {
@@ -856,9 +856,9 @@ where
         }
     }
 
-    fn process(&mut self, bft_msg: BftMsg) {
+    fn process(&mut self, bft_msg: CoreInput) {
         match bft_msg {
-            BftMsg::Proposal(proposal) => {
+            CoreInput::Proposal(proposal) => {
                 if self.step <= Step::ProposeWait {
                     if let Some(prop) = self.handle_proposal(proposal) {
                         self.set_proposal(prop);
@@ -872,7 +872,7 @@ where
                     }
                 }
             }
-            BftMsg::Vote(vote) => {
+            CoreInput::Vote(vote) => {
                 if vote.vote_type == VoteType::Prevote {
                     if self.step <= Step::PrevoteWait {
                         let _ = self.try_save_vote(vote);
@@ -913,19 +913,19 @@ where
                     error!("Invalid Vote Type!");
                 }
             }
-            BftMsg::Feed(feed) => {
+            CoreInput::Feed(feed) => {
                 if self.try_handle_feed(feed) && self.step == Step::ProposeWait {
                     self.new_round_start();
                 }
             }
-            BftMsg::Status(rich_status) => {
+            CoreInput::Status(rich_status) => {
                 if self.try_handle_status(rich_status) {
                     self.new_round_start();
                 }
             }
 
             #[cfg(feature = "async_verify")]
-            BftMsg::VerifyResp(verify_resp) => {
+            CoreInput::VerifyResp(verify_resp) => {
                 self.save_verify_resp(verify_resp);
                 if self.step == Step::VerifyWait {
                     // next do precommit

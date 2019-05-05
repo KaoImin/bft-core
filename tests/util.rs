@@ -4,8 +4,8 @@ use crossbeam_channel::{Receiver, Sender};
 
 #[derive(Clone, Debug)]
 pub(crate) struct TestSupport {
-    pub(crate) send: Sender<bft::BftMsg>,
-    pub(crate) recv: Receiver<bft::BftMsg>,
+    pub(crate) send: Sender<bft::CoreInput>,
+    pub(crate) recv: Receiver<bft::CoreOutput>,
     pub(crate) recv_commit: Receiver<bft::Commit>,
 }
 
@@ -14,7 +14,7 @@ impl Support for TestSupport {
         match msg {
             FrameSend::Proposal(p) => self
                 .send
-                .send(bft::BftMsg::Proposal(bft::Proposal {
+                .send(bft::CoreInput::Proposal(bft::Proposal {
                     height: p.height,
                     round: p.round,
                     content: p.content,
@@ -31,7 +31,7 @@ impl Support for TestSupport {
                 };
 
                 self.send
-                    .send(bft::BftMsg::Vote(bft::Vote {
+                    .send(bft::CoreInput::Vote(bft::Vote {
                         height: v.height,
                         round: v.round,
                         vote_type,
@@ -42,14 +42,14 @@ impl Support for TestSupport {
             }
             FrameSend::Feed(f) => self
                 .send
-                .send(bft::BftMsg::Feed(bft::Feed {
+                .send(bft::CoreInput::Feed(bft::Feed {
                     height: f.height,
                     proposal: f.proposal,
                 }))
                 .unwrap(),
             FrameSend::Status(s) => self
                 .send
-                .send(bft::BftMsg::Status(bft::Status {
+                .send(bft::CoreInput::Status(bft::Status {
                     height: s.height,
                     interval: None,
                     authority_list: s.authority_list,
@@ -60,7 +60,7 @@ impl Support for TestSupport {
 
     fn recv(&self) -> FrameRecv {
         match self.recv.recv().unwrap() {
-            bft::BftMsg::Proposal(p) => {
+            bft::CoreOutput::Proposal(p) => {
                 return FrameRecv::Proposal(Proposal {
                     height: p.height,
                     round: p.round,
@@ -70,7 +70,7 @@ impl Support for TestSupport {
                     proposer: p.proposer,
                 })
             }
-            bft::BftMsg::Vote(v) => {
+            bft::CoreOutput::Vote(v) => {
                 let vote_type = if v.vote_type == bft::VoteType::Prevote {
                     VoteType::Prevote
                 } else {
