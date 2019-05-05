@@ -1,12 +1,34 @@
 pub mod util;
 
-use bft_core::{types::*, Core};
+use bft_core::{types::*, Core, FromCore};
 use bft_test::whitebox::actuator::Actuator;
 use crossbeam_channel::{select, unbounded, Receiver, Sender};
 use env_logger::Builder;
 use log::LevelFilter::Info;
 use std::thread;
 use util::TestSupport;
+
+#[derive(Debug)]
+enum Error {
+    SendErr,
+}
+
+struct SendMsg(Sender<BftMsg>);
+
+impl FromCore for SendMsg {
+    type error = Error;
+
+    fn send_msg(&self, msg: BftMsg) -> Result<(), Error> {
+        self.0.send(msg).map_err(|_| Error::SendErr)?;
+        Ok(())
+    }
+}
+
+impl SendMsg {
+    fn new(s: Sender<BftMsg>) -> Self {
+        SendMsg(s)
+    }
+}
 
 struct BftTest {
     recv4test: Receiver<BftMsg>,
@@ -31,8 +53,9 @@ impl BftTest {
     }
 
     fn init(send_commit: Sender<Commit>, recv4test: Receiver<BftMsg>) -> (Self, Receiver<BftMsg>) {
-        let (bft, recv4core) = Core::start(vec![0]);
         let (send2test, recv) = unbounded();
+        let (s, recv4core) = unbounded();
+        let bft = Core::new(SendMsg::new(s), vec![0]);
         (
             BftTest {
                 recv4test,
@@ -87,13 +110,20 @@ impl TestSupport {
 
 #[test]
 fn test() {
+    let init_height = 0;
+    let init_round = 0;
+
     let mut builder = Builder::from_default_env();
     builder.filter(None, Info).init();
 
     let (s, r, r_commit) = BftTest::start();
     let ts = TestSupport::new(s, r, r_commit);
-    let mut test = Actuator::new(ts, 0, 0, generate_authority(), "tests/output/test.db");
-    // let case = bft_test::test_case::one_offline_cases();
-    // let _ = test.proc_test(case).map_err(|err| panic!("bft error {:?}", err));
+    let mut test = Actuator::new(
+        ts,
+        init_height,
+        init_round,
+        generate_authority(),
+        "tests/output/test.db",
+    );
     let _ = test.all_test().map_err(|err| panic!("bft error {:?}", err));
 }

@@ -3,6 +3,7 @@ use crate::{
     timer::{TimeoutInfo, WaitTimer},
     types::*,
     voteset::{VoteCollector, VoteSet},
+    FromCore,
 };
 
 use crossbeam_channel::{select, unbounded, Receiver, RecvError, Sender};
@@ -66,8 +67,8 @@ impl Default for Step {
 }
 
 /// BFT state message.
-pub(crate) struct Bft {
-    msg_sender: Sender<BftMsg>,
+pub(crate) struct Bft<T> {
+    msg_sender: T,
     msg_receiver: Receiver<BftMsg>,
     timer_seter: Sender<TimeoutInfo>,
     timer_notity: Receiver<TimeoutInfo>,
@@ -91,9 +92,12 @@ pub(crate) struct Bft {
     verify_result: HashMap<Target, bool>,
 }
 
-impl Bft {
+impl<T> Bft<T>
+where
+    T: FromCore + Send + 'static,
+{
     /// A function to start a BFT state machine.
-    pub(crate) fn start(s: Sender<BftMsg>, r: Receiver<BftMsg>, local_address: Address) {
+    pub(crate) fn start(s: T, r: Receiver<BftMsg>, local_address: Address) {
         // define message channel and timeout channel
         let (bft2timer, timer4bft) = unbounded();
         let (timer2bft, bft4timer) = unbounded();
@@ -142,7 +146,7 @@ impl Bft {
 
     #[cfg(not(feature = "async_verify"))]
     fn initialize(
-        s: Sender<BftMsg>,
+        s: T,
         r: Receiver<BftMsg>,
         ts: Sender<TimeoutInfo>,
         tn: Receiver<TimeoutInfo>,
@@ -220,7 +224,7 @@ impl Bft {
 
     #[inline]
     fn send_bft_msg(&self, msg: BftMsg) {
-        self.msg_sender.send(msg).unwrap();
+        self.msg_sender.send_msg(msg).unwrap();
     }
 
     #[inline]
