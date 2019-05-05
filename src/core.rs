@@ -55,7 +55,7 @@ impl Core {
 #[cfg(test)]
 mod test {
     use super::Core as Bft;
-    use crate::{error::BftError, types::*, FromCore};
+    use crate::{types::*, FromCore};
     use crossbeam_channel::{unbounded, Sender};
 
     #[derive(Debug)]
