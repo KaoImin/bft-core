@@ -1,5 +1,6 @@
 use crate::{
     params::BftParams,
+    rand::get_index,
     timer::{TimeoutInfo, WaitTimer},
     types::*,
     voteset::{VoteCollector, VoteSet},
@@ -85,6 +86,8 @@ pub(crate) struct Bft<T> {
     height_filter: HashMap<Address, Instant>,
     round_filter: HashMap<Address, Instant>,
     authority_list: Vec<Address>,
+    propose_weight: Vec<u64>,
+    vote_weight_map: HashMap<Address, u64>,
     htime: Instant,
     params: BftParams,
 
@@ -169,6 +172,8 @@ where
             last_commit_round: None,
             last_commit_proposal: None,
             authority_list: Vec::new(),
+            propose_weight: Vec::new(),
+            vote_weight_map: HashMap::new(),
             htime: Instant::now(),
             height_filter: HashMap::new(),
             round_filter: HashMap::new(),
@@ -201,6 +206,8 @@ where
             last_commit_round: None,
             last_commit_proposal: None,
             authority_list: Vec::new(),
+            propose_weight: Vec::new(),
+            vote_weight_map: HashMap::new(),
             htime: Instant::now(),
             height_filter: HashMap::new(),
             round_filter: HashMap::new(),
@@ -228,13 +235,13 @@ where
     }
 
     #[inline]
-    fn cal_above_threshold(&self, count: usize) -> bool {
-        count * 3 > self.authority_list.len() * 2
+    fn cal_above_threshold(&self, count: u64) -> bool {
+        count * 3 > self.vote_weight_map.values().sum::<u64>() * 2
     }
 
     #[inline]
-    fn cal_all_vote(&self, count: usize) -> bool {
-        count == self.authority_list.len()
+    fn cal_all_vote(&self, count: u64) -> bool {
+        count == self.vote_weight_map.values().sum()
     }
 
     #[inline]
@@ -340,15 +347,13 @@ where
     }
 
     fn is_proposer(&self) -> bool {
-        let count = if !self.authority_list.is_empty() {
-            self.authority_list.len()
-        } else {
+        if self.authority_list.is_empty() {
             error!("The Authority List is Empty!");
             return false;
-        };
+        }
 
         let nonce = self.height + self.round;
-        if self.params.address == self.authority_list[(nonce as usize) % count] {
+        if self.params.address == self.authority_list[get_index(nonce, &self.propose_weight)] {
             info!(
                 "Become proposer at height {:?}, round {:?}",
                 self.height, self.round
@@ -523,7 +528,9 @@ where
             voter: self.params.address.clone(),
         };
 
-        let _ = self.votes.add(vote.clone());
+        let _ = self
+            .votes
+            .add(vote.clone(), self.vote_weight_map[&self.params.address]);
         let msg = CoreOutput::Vote(vote);
         debug!("Prevote to {:?}", prevote);
         self.send_bft_msg(msg);
@@ -538,6 +545,11 @@ where
             "Receive a {:?} vote of height {:?}, round {:?}, to {:?}, from {:?}",
             vote.vote_type, vote.height, vote.round, vote.proposal, vote.voter
         );
+
+        if self.vote_weight_map.get(&vote.voter).is_none() {
+            error!("Lose vote weight of node {:?}", vote.voter);
+            return false;
+        }
 
         if vote.height == self.height - 1 {
             if self.last_commit_round.is_some() && vote.round >= self.last_commit_round.unwrap() {
@@ -562,7 +574,9 @@ where
             return false;
         } else if vote.height == self.height
             && vote.round >= self.round
-            && self.votes.add(vote.clone())
+            && self
+                .votes
+                .add(vote.clone(), self.vote_weight_map[&vote.voter])
         {
             trace!("Add the vote successfully");
             return true;
@@ -684,8 +698,11 @@ where
             voter: self.params.address.clone(),
         };
 
-        let _ = self.votes.add(vote.clone());
+        let _ = self
+            .votes
+            .add(vote.clone(), self.vote_weight_map[&self.params.address]);
         let msg = CoreOutput::Vote(vote);
+
         debug!("Precommit to {:?}", precommit);
         self.send_bft_msg(msg);
         self.set_timer(
@@ -788,7 +805,10 @@ where
             }
             // goto new height directly and update authorty list
             self.goto_new_height(rich_status.height + 1);
-            self.authority_list = rich_status.authority_list;
+            self.authority_list = rich_status.get_address_list();
+            self.propose_weight = rich_status.get_propose_weight_list();
+            self.vote_weight_map = rich_status.get_vote_weight_map();
+
             if let Some(interval) = rich_status.interval {
                 // update the bft interval
                 self.params.timer.set_total_duration(interval);

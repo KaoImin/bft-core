@@ -18,6 +18,8 @@ crossbeam-channel = "0.3"
 lru-cache = "0.1"
 log = "0.4.3"
 min-max-heap = "1.2.0"
+rand_core = "0.4"
+rand_pcg = "0.1.2"
 serde = "1.0"
 serde_derive = "1.0"
 
@@ -29,3 +31,4 @@ rand = "0.5.5"
 [features]
 default = []
 async_verify = []
+rand_proposer = []

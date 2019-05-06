@@ -1,4 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Type for node address.
 pub type Address = Vec<u8>;
@@ -126,7 +127,65 @@ pub struct Status {
     /// The time interval of next height. If it is none, maintain the old interval.
     pub interval: Option<u64>,
     /// A new authority list for next height.
-    pub authority_list: Vec<Address>,
+    pub authority_list: Vec<Node>,
+}
+
+impl Status {
+    pub(crate) fn get_address_list(&self) -> Vec<Address> {
+        let mut res = Vec::new();
+        for addr in self.authority_list.iter() {
+            res.push(addr.address.clone());
+        }
+        res
+    }
+
+    pub(crate) fn get_propose_weight_list(&self) -> Vec<u64> {
+        let mut res = Vec::new();
+        for pw in self.authority_list.iter() {
+            res.push(pw.propose_weight);
+        }
+        res
+    }
+
+    pub(crate) fn get_vote_weight_map(&self) -> HashMap<Address, u64> {
+        let mut res = HashMap::new();
+        for vw in self.authority_list.iter() {
+            res.entry(vw.address.clone()).or_insert(vw.vote_weight);
+        }
+        res
+    }
+}
+
+/// The node information.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct Node {
+    /// The node address.
+    pub address: Address,
+    /// The propose weight of the node.
+    pub propose_weight: u64,
+    /// The vote weight of the node.
+    pub vote_weight: u64,
+}
+
+impl Node {
+    /// A function to create a new Node.
+    pub fn new(address: Address) -> Self {
+        Node {
+            address,
+            propose_weight: 1,
+            vote_weight: 1,
+        }
+    }
+
+    /// A function to set a propose weight of the node.
+    pub fn set_propose_weight(&mut self, weight: u64) {
+        self.propose_weight = weight;
+    }
+
+    /// A function to set a vote weight of the node.
+    pub fn set_vote_weight(&mut self, weight: u64) {
+        self.vote_weight = weight;
+    }
 }
 
 /// A verify result of a proposal.

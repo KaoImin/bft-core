@@ -10,7 +10,7 @@ pub(crate) struct VoteCollector {
     /// A LruCache to store vote collect of each round.
     pub(crate) votes: LruCache<u64, RoundCollector>,
     /// A HashMap to record prevote count of each round.
-    pub(crate) prevote_count: HashMap<u64, usize>,
+    pub(crate) prevote_count: HashMap<u64, u64>,
 }
 
 impl VoteCollector {
@@ -23,7 +23,7 @@ impl VoteCollector {
     }
 
     /// A function try to add a vote, return `bool`.
-    pub(crate) fn add(&mut self, vote: Vote) -> bool {
+    pub(crate) fn add(&mut self, vote: Vote, weight: u64) -> bool {
         let height = vote.height;
         let round = vote.round;
         let vote_type = vote.vote_type;
@@ -36,11 +36,11 @@ impl VoteCollector {
                     .votes
                     .get_mut(&height)
                     .unwrap()
-                    .add(round, vote_type, sender, vote)
+                    .add(round, vote_type, sender, vote, weight)
                 {
                     // update prevote count hashmap
                     let counter = self.prevote_count.entry(round).or_insert(0);
-                    *counter += 1;
+                    *counter += weight;
                     true
                 } else {
                     // if add prevote fail, do not update prevote hashmap
@@ -48,21 +48,21 @@ impl VoteCollector {
                 }
             } else {
                 let mut round_votes = RoundCollector::new();
-                round_votes.add(round, vote_type, sender, vote);
+                round_votes.add(round, vote_type, sender, vote, weight);
                 self.votes.insert(height, round_votes);
                 // update prevote count hashmap
                 let counter = self.prevote_count.entry(round).or_insert(0);
-                *counter += 1;
+                *counter += weight;
                 true
             }
         } else if self.votes.contains_key(&height) {
             self.votes
                 .get_mut(&height)
                 .unwrap()
-                .add(round, vote_type, sender, vote)
+                .add(round, vote_type, sender, vote, weight)
         } else {
             let mut round_votes = RoundCollector::new();
-            round_votes.add(round, vote_type, sender, vote);
+            round_votes.add(round, vote_type, sender, vote, weight);
             self.votes.insert(height, round_votes);
             true
         }
@@ -93,9 +93,9 @@ pub(crate) struct VoteSet {
     /// A HashMap that K is voter, V is proposal.
     pub(crate) votes_by_sender: HashMap<Address, Target>,
     /// A HashMap that K is proposal V is count of the proposal.
-    pub(crate) votes_by_proposal: HashMap<Target, usize>,
+    pub(crate) votes_by_proposal: HashMap<Target, u64>,
     /// Count of vote set.
-    pub(crate) count: usize,
+    pub(crate) count: u64,
 }
 
 impl VoteSet {
@@ -109,15 +109,15 @@ impl VoteSet {
     }
 
     /// A function to add a vote to the vote set.
-    pub(crate) fn add(&mut self, sender: Address, vote: Target) -> bool {
+    pub(crate) fn add(&mut self, sender: Address, vote: Target, weight: u64) -> bool {
         let mut is_add = false;
         self.votes_by_sender.entry(sender).or_insert_with(|| {
             is_add = true;
             vote.to_owned()
         });
         if is_add {
-            self.count += 1;
-            *self.votes_by_proposal.entry(vote).or_insert(0) += 1;
+            self.count += weight;
+            *self.votes_by_proposal.entry(vote).or_insert(0) += weight;
         }
         is_add
     }
@@ -171,15 +171,16 @@ impl RoundCollector {
         vote_type: VoteType,
         sender: Address,
         vote: Target,
+        weight: u64,
     ) -> bool {
         if self.round_votes.contains_key(&round) {
             self.round_votes
                 .get_mut(&round)
                 .unwrap()
-                .add(vote_type, sender, vote)
+                .add(vote_type, sender, vote, weight)
         } else {
             let mut step_votes = StepCollector::new();
-            step_votes.add(vote_type, sender, vote);
+            step_votes.add(vote_type, sender, vote, weight);
             self.round_votes.insert(round, step_votes);
             true
         }
@@ -210,11 +211,17 @@ impl StepCollector {
     }
 
     /// A function to add a vote to the step collector.
-    pub(crate) fn add(&mut self, vote_type: VoteType, sender: Address, vote: Target) -> bool {
+    pub(crate) fn add(
+        &mut self,
+        vote_type: VoteType,
+        sender: Address,
+        vote: Target,
+        weight: u64,
+    ) -> bool {
         self.step_votes
             .entry(vote_type)
             .or_insert_with(VoteSet::new)
-            .add(sender, vote)
+            .add(sender, vote, weight)
     }
 
     /// A function to get voteset of the vote type
