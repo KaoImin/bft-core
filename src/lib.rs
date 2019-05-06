@@ -34,7 +34,7 @@
 //! # let status = Status {
 //! #   height: 0,
 //! #   interval: None,
-//! #   authority_list: vec![vec![0]],
+//! #   authority_list: vec![Node::new(vec![0])],
 //! # };
 //! #
 //! # let feed = Feed {
@@ -66,6 +66,8 @@ pub mod core;
 pub mod error;
 /// BFT params include time interval and local address.
 pub(crate) mod params;
+///
+pub(crate) mod rand;
 /// BFT timer.
 pub(crate) mod timer;
 /// BFT types.
