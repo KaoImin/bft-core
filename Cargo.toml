@@ -31,4 +31,4 @@ rand = "0.5.5"
 [features]
 default = []
 async_verify = []
-rand_proposer = []
+no_rand = []
