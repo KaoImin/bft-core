@@ -1,6 +1,6 @@
 use crate::algorithm::Step;
 
-use std::cmp::{Ordering, Ord, PartialOrd};
+use std::cmp::{Ord, Ordering, PartialOrd};
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::{Receiver, Sender};
@@ -77,7 +77,9 @@ impl WaitTimer {
                 let now = Instant::now();
 
                 // if some timers are set as the same time, send timeout messages and pop them
-                while !timer_heap.is_empty() && now >= timer_heap.peek_min().cloned().unwrap().timeval {
+                while !timer_heap.is_empty()
+                    && now >= timer_heap.peek_min().cloned().unwrap().timeval
+                {
                     self.timer_notify
                         .send(timer_heap.pop_min().unwrap())
                         .unwrap();
