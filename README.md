@@ -1,5 +1,8 @@
 # BFT
 
+[![Build Status](https://travis-ci.com/KaoImin/bft-core.svg?branch=develop)](https://travis-ci.com/KaoImin/bft-core)
+[![Crate](https://img.shields.io/crates/v/bft-core.svg)](https://crates.io/crates/bft-core)
+
 An efficient and stable Rust library of BFT protocol for distributed system.
 
 ## What is BFT?
