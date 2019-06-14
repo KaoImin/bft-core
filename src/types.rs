@@ -2,16 +2,19 @@ use serde_derive::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt};
 
 /// Type for node address.
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct Address(Vec<u8>);
 
-impl fmt::Display for Address {
+impl fmt::Debug for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Addr[{}, {}, {}, {}, {}]",
-            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4]
-        )
+        if self.0.len() > 5 {
+            return write!(
+                f,
+                "Addr[{}, {}, {}, {}, {}]",
+                self.0[0], self.0[1], self.0[2], self.0[3], self.0[4]
+            );
+        }
+        write!(f, "Prop {:?}", self.0)
     }
 }
 
@@ -28,16 +31,19 @@ impl Address {
 }
 
 /// Type for proposal.
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
 pub struct Target(Vec<u8>);
 
-impl fmt::Display for Target {
+impl fmt::Debug for Target {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Addr[{}, {}, {}, {}, {}]",
-            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4]
-        )
+        if self.0.len() > 5 {
+            return write!(
+                f,
+                "Prop[{}, {}, {}, {}, {}]",
+                self.0[0], self.0[1], self.0[2], self.0[3], self.0[4]
+            );
+        }
+        write!(f, "Prop {:?}", self.0)
     }
 }
 
