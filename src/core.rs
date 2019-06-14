@@ -92,7 +92,7 @@ mod test {
     #[test]
     fn test_height_change() {
         let height: Vec<(u64, u64)> = vec![(1, 2), (2, 3), (1, 3), (4, 5), (6, 7), (5, 7)];
-        let mut bft = Bft::new(SendMsg::new(), vec![1]);
+        let mut bft = Bft::new(SendMsg::new(), Address::new(vec![1]));
         assert_eq!(bft.get_height(), 0);
 
         for h in height.into_iter() {

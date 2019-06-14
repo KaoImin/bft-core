@@ -1,10 +1,62 @@
 use serde_derive::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
 /// Type for node address.
-pub type Address = Vec<u8>;
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct Address(Vec<u8>);
+
+impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Addr[{}, {}, {}, {}, {}]",
+            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4]
+        )
+    }
+}
+
+impl Address {
+    /// A function to create a new Address.
+    pub fn new(addr: Vec<u8>) -> Self {
+        Address(addr)
+    }
+
+    /// A function to transfer Address into vec.
+    pub fn into_vec(self) -> Vec<u8> {
+        self.0
+    }
+}
+
 /// Type for proposal.
-pub type Target = Vec<u8>;
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct Target(Vec<u8>);
+
+impl fmt::Display for Target {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "Addr[{}, {}, {}, {}, {}]",
+            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4]
+        )
+    }
+}
+
+impl Target {
+    /// A function to create a new Target.
+    pub fn new(ctx: Vec<u8>) -> Self {
+        Target(ctx)
+    }
+
+    /// Return true if the Target is an empty vec.
+    pub fn is_nil(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    ///
+    pub fn into_vec(self) -> Vec<u8> {
+        self.0
+    }
+}
 
 /// BFT input message type.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]

@@ -1,7 +1,5 @@
-use crate::types::{Address, Target};
-
-use std::cell::Cell;
-use std::time::Duration;
+use crate::types::Address;
+use std::{cell::Cell, time::Duration};
 
 /// BFT params.
 #[derive(Clone, Debug)]
@@ -14,7 +12,7 @@ pub(crate) struct BftParams {
 
 impl BftParams {
     /// A function to create a new BFT params.
-    pub(crate) fn new(local_address: Target) -> Self {
+    pub(crate) fn new(local_address: Address) -> Self {
         BftParams {
             address: local_address,
             timer: BftTimer::default(),

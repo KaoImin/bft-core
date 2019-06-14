@@ -19,10 +19,10 @@ impl Support for TestSupport {
                 .send(bft::CoreInput::Proposal(bft::Proposal {
                     height: p.height,
                     round: p.round,
-                    content: p.content,
+                    content: bft::Target::new(p.content),
                     lock_round: p.lock_round,
                     lock_votes: into_bft_vote(p.lock_votes),
-                    proposer: p.proposer,
+                    proposer: bft::Address::new(p.proposer),
                 }))
                 .unwrap(),
             FrameSend::Vote(v) => {
@@ -37,8 +37,8 @@ impl Support for TestSupport {
                         height: v.height,
                         round: v.round,
                         vote_type,
-                        proposal: v.proposal,
-                        voter: v.voter,
+                        proposal: bft::Target::new(v.proposal),
+                        voter: bft::Address::new(v.voter),
                     }))
                     .unwrap();
             }
@@ -46,7 +46,7 @@ impl Support for TestSupport {
                 .send
                 .send(bft::CoreInput::Feed(bft::Feed {
                     height: f.height,
-                    proposal: f.proposal,
+                    proposal: bft::Target::new(f.proposal),
                 }))
                 .unwrap(),
             FrameSend::Status(s) => self
@@ -66,10 +66,10 @@ impl Support for TestSupport {
                 return FrameRecv::Proposal(Proposal {
                     height: p.height,
                     round: p.round,
-                    content: p.content,
+                    content: p.content.into_vec(),
                     lock_round: p.lock_round,
                     lock_votes: from_bft_vote(p.lock_votes),
-                    proposer: p.proposer,
+                    proposer: p.proposer.into_vec(),
                 })
             }
             bft::CoreOutput::Vote(v) => {
@@ -83,8 +83,8 @@ impl Support for TestSupport {
                     height: v.height,
                     round: v.round,
                     vote_type,
-                    proposal: v.proposal,
-                    voter: v.voter,
+                    proposal: v.proposal.into_vec(),
+                    voter: v.voter.into_vec(),
                 });
             }
             _ => panic!("Invalid message type!"),
@@ -98,7 +98,7 @@ impl Support for TestSupport {
             println!("Get commit at height {:?}", c.height);
             return Some(Commit {
                 height: c.height,
-                result: c.proposal,
+                result: c.proposal.into_vec(),
                 node: 0 as u8,
             });
         } else {
@@ -137,8 +137,8 @@ fn into_bft_vote(lock_votes: Vec<Vote>) -> Vec<bft::Vote> {
             res.push(bft::Vote {
                 height: v.height,
                 round: v.height,
-                proposal: v.proposal,
-                voter: v.voter,
+                proposal: bft::Target::new(v.proposal),
+                voter: bft::Address::new(v.voter),
                 vote_type: bft::VoteType::Prevote,
             });
         }
@@ -153,8 +153,8 @@ fn from_bft_vote(lock_votes: Vec<bft::Vote>) -> Vec<Vote> {
             res.push(Vote {
                 height: v.height,
                 round: v.height,
-                proposal: v.proposal,
-                voter: v.voter,
+                proposal: v.proposal.into_vec(),
+                voter: v.voter.into_vec(),
                 vote_type: VoteType::Prevote,
             });
         }
@@ -165,7 +165,7 @@ fn from_bft_vote(lock_votes: Vec<bft::Vote>) -> Vec<Vote> {
 fn convert_authority(origin: Vec<Vec<u8>>) -> Vec<bft::Node> {
     let mut res = Vec::new();
     for addr in origin.into_iter() {
-        res.push(bft::Node::new(addr));
+        res.push(bft::Node::new(bft::Address::new(addr)));
     }
     res
 }

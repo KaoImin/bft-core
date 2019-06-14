@@ -153,7 +153,7 @@ where
         r: Receiver<CoreInput>,
         ts: Sender<TimeoutInfo>,
         tn: Receiver<TimeoutInfo>,
-        local_address: Target,
+        local_address: Address,
     ) -> Self {
         info!("BFT State Machine Launched.");
         Bft {
@@ -187,7 +187,7 @@ where
         r: Receiver<CoreInput>,
         ts: Sender<TimeoutInfo>,
         tn: Receiver<TimeoutInfo>,
-        local_address: Target,
+        local_address: Address,
     ) -> Self {
         info!("BFT State Machine Launched.");
         Bft {
@@ -403,12 +403,13 @@ where
                 self.lock_status.clone().unwrap().proposal
             );
 
+            let tmp = self.lock_status.clone().unwrap();
             CoreOutput::Proposal(Proposal {
                 height: self.height,
                 round: self.round,
-                content: self.lock_status.clone().unwrap().proposal,
-                lock_round: Some(self.lock_status.clone().unwrap().round),
-                lock_votes: self.lock_status.clone().unwrap().votes,
+                content: tmp.proposal,
+                lock_round: Some(tmp.round),
+                lock_votes: tmp.votes,
                 proposer: self.params.address.clone(),
             })
         } else {
@@ -511,7 +512,7 @@ where
         } else if let Some(proposal) = self.proposal.clone() {
             proposal
         } else {
-            Vec::new()
+            Target::new(vec![])
         };
 
         trace!(
@@ -567,7 +568,7 @@ where
                     vote_type: VoteType::Precommit,
                     height: vote.height,
                     round: vote.round,
-                    proposal: Vec::new(),
+                    proposal: Target::new(vec![]),
                     voter: self.params.clone().address,
                 }));
             }
@@ -619,7 +620,7 @@ where
                     if self.lock_status.is_some()
                         && self.lock_status.clone().unwrap().round < self.round
                     {
-                        if hash.is_empty() {
+                        if hash.is_nil() {
                             // receive +2/3 prevote to nil, clean lock info
                             trace!(
                                 "Receive over 2/3 prevote to nil at height {:?}, round {:?}",
@@ -633,7 +634,7 @@ where
                             self.set_polc(&hash, &prevote_set, VoteType::Prevote);
                         }
                     }
-                    if self.lock_status.is_none() && !hash.is_empty() {
+                    if self.lock_status.is_none() && !hash.is_nil() {
                         // receive a PoLC, lock the proposal
                         self.set_polc(&hash, &prevote_set, VoteType::Prevote);
                     }
@@ -681,7 +682,7 @@ where
             lock_proposal.proposal
         } else {
             self.proposal = None;
-            Vec::new()
+            Target::new(vec![])
         };
 
         trace!(
@@ -732,7 +733,7 @@ where
 
             for (hash, count) in &precommit_set.votes_by_proposal {
                 if self.cal_above_threshold(*count) {
-                    if hash.is_empty() {
+                    if hash.is_nil() {
                         info!("Reach nil consensus, goto next round {:?}", self.round + 1);
                         return PRECOMMIT_ON_NIL;
                     } else {
@@ -753,14 +754,14 @@ where
         self.send_bft_msg(CoreOutput::Commit(Commit {
             height: self.height,
             round: self.round,
-            proposal: result.clone().proposal,
+            proposal: result.proposal.clone(),
             lock_votes: self.lock_status.clone().unwrap().votes,
             address: self.params.clone().address,
         }));
 
         info!(
             "Commit {:?} at height {:?}, consensus time {:?}",
-            result.clone().proposal,
+            result.proposal.clone(),
             self.height,
             Instant::now() - self.htime
         );
@@ -769,7 +770,7 @@ where
         self.last_commit_proposal = Some(result.proposal);
     }
 
-    fn set_polc(&mut self, hash: &[u8], voteset: &VoteSet, vote_type: VoteType) {
+    fn set_polc(&mut self, hash: &Target, voteset: &VoteSet, vote_type: VoteType) {
         self.proposal = Some(hash.to_owned());
         self.lock_status = Some(LockStatus {
             proposal: hash.to_owned(),
@@ -824,12 +825,10 @@ where
     }
 
     fn try_handle_feed(&mut self, feed: Feed) -> bool {
-        if feed.height >= self.height {
+        let height = feed.height;
+        if height >= self.height {
             self.feed = Some(feed);
-            info!(
-                "Receive feed of height {:?}",
-                self.feed.clone().unwrap().height
-            );
+            info!("Receive feed of height {:?}", height);
             true
         } else {
             false

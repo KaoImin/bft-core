@@ -58,7 +58,7 @@ impl BftTest {
     ) -> (Self, Receiver<CoreOutput>) {
         let (send2test, recv) = unbounded();
         let (s, recv4core) = unbounded();
-        let bft = Core::new(SendMsg::new(s), vec![0]);
+        let bft = Core::new(SendMsg::new(s), Address::new(vec![0]));
         (
             BftTest {
                 recv4test,

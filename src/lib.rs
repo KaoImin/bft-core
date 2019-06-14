@@ -34,16 +34,16 @@
 //! # let status = Status {
 //! #   height: 0,
 //! #   interval: None,
-//! #   authority_list: vec![Node::new(vec![0])],
+//! #   authority_list: vec![Node::new(Address::new(vec![0]))],
 //! # };
 //! #
 //! # let feed = Feed {
 //! #   height: 1,
-//! #   proposal: vec![6, 5, 5, 3, 5],
+//! #   proposal: Target::new(vec![6, 5, 5, 3, 5]),
 //! # };
 //! #
 //! let (s, r) = unbounded();
-//! let mut bft = Core::new(SendMsg::new(s), vec![0]);
+//! let mut bft = Core::new(SendMsg::new(s), Address::new(vec![0]));
 //!
 //! // send message
 //! bft.send_bft_msg(CoreInput::Start).unwrap();
