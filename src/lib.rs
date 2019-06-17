@@ -85,5 +85,5 @@ pub trait FromCore {
     /// BFT core send message error.
     type Error: ::std::fmt::Debug;
     /// Send a BFT message to outside.
-    fn send_msg(&self, msg: CoreOutput) -> Result<(), Self::Error>;
+    fn send_msg(&mut self, msg: CoreOutput) -> Result<(), Self::Error>;
 }

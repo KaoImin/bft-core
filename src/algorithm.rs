@@ -230,7 +230,7 @@ where
     }
 
     #[inline]
-    fn send_bft_msg(&self, msg: CoreOutput) {
+    fn send_bft_msg(&mut self, msg: CoreOutput) {
         self.msg_sender.send_msg(msg).unwrap();
     }
 
@@ -283,7 +283,7 @@ where
         self.verify_result.clear();
     }
 
-    fn retransmit_vote(&self, round: u64) {
+    fn retransmit_vote(&mut self, round: u64) {
         info!(
             "Some nodes are at low height, retransmit votes of height {:?}, round {:?}",
             self.height - 1,
@@ -439,7 +439,7 @@ where
         true
     }
 
-    fn handle_proposal(&self, proposal: Proposal) -> Option<Proposal> {
+    fn handle_proposal(&mut self, proposal: Proposal) -> Option<Proposal> {
         if proposal.height == self.height - 1 {
             if self.last_commit_round.is_some() && proposal.round >= self.last_commit_round.unwrap()
             {
