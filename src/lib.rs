@@ -83,7 +83,7 @@ use crate::types::CoreOutput;
 /// BFT core send message.
 pub trait FromCore {
     /// BFT core send message error.
-    type error: ::std::fmt::Debug;
+    type Error: ::std::fmt::Debug;
     /// Send a BFT message to outside.
-    fn send_msg(&self, msg: CoreOutput) -> Result<(), Self::error>;
+    fn send_msg(&self, msg: CoreOutput) -> Result<(), Self::Error>;
 }

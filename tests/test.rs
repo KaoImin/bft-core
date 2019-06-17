@@ -16,7 +16,7 @@ enum Error {
 struct SendMsg(Sender<CoreOutput>);
 
 impl FromCore for SendMsg {
-    type error = Error;
+    type Error = Error;
 
     fn send_msg(&self, msg: CoreOutput) -> Result<(), Error> {
         self.0.send(msg).map_err(|_| Error::SendErr)?;
