@@ -80,7 +80,7 @@ pub use crate::core::Core;
 #[cfg(feature = "async_verify")]
 pub use crate::types::VerifyResp;
 pub use crate::types::{
-    Address, Commit, CoreInput, CoreOutput, Feed, Node, Proposal, Target, Vote,
+    Address, Commit, CoreInput, CoreOutput, Feed, Node, Proposal, Status, Target, Vote,
 };
 
 /// BFT core send message.
