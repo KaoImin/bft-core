@@ -77,8 +77,11 @@ pub(crate) mod voteset;
 
 /// Re-pub BFT core.
 pub use crate::core::Core;
-
-use crate::types::CoreOutput;
+#[cfg(feature = "async_verify")]
+pub use crate::types::VerifyResp;
+pub use crate::types::{
+    Address, Commit, CoreInput, CoreOutput, Feed, Node, Proposal, Target, Vote,
+};
 
 /// BFT core send message.
 pub trait FromCore {
